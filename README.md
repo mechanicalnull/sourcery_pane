@@ -2,6 +2,8 @@
 
 Source view that syncs with disassembly when debug info and source is available.
 
+![Real-time Source/Disassembly Synch](/images/sourcery.gif)
+
 ## Description
 
 `Sourcery Pane` uses the magic of debug builds and having access to source code to translate the current location in disassembly into a synchronized view of source code.
