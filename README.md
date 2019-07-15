@@ -2,25 +2,29 @@
 
 Source view that syncs with disassembly when debug info and source is available.
 
-## Description:
+## Description
 
 `Sourcery Pane` uses the magic of debug builds and having access to source code to translate the current location in disassembly into a synchronized view of source code.
 
-The only dependency is the standard `addr2line` executable, which is what is used to do the translation between offsets and source lines.
+The only dependency is the `addr2line` utility from binutils, which is used to do the translation between offsets and source lines.
 
 Also features local translation paths for binaries built on other systems as well as pausing/resuming sync with disassembly.
 
 ### Background
 
-I wrote this tool because there seems to be a lot of confusion over what is needed to go from offsets in a binary back to source.  In short, you only need three things:
+I wrote this tool because there seems to be a lot of confusion over what is needed to go from offsets in a binary back to source.  In short, you only need three things other than the binary:
 
-1) The target binary
-2) The source code the binary was built from
-3) Data that translates offsets to source lines (and potentially a tool for extracting it)
+1) Information to translate binary offsets to source lines
+2) A utility to read/use the line number information
+3) The same source code files the binary was built from
 
-Of course the first two are obvious, but the third isn't as mysterious as people think. On Linux, it is most often included in the target binary as part of the debug information when you compile with the `-g` option. For more information, you can read up on the DWARF specification [here](http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf).
+On Linux, the information in #1 is most often embedded in the target binary, as part of the debug information included when you compile with the `-g` option (or `-gline-tables-only` with clang). For more information on the line number information in, you can read more on the DWARF specification [here](http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf).
 
-So if you've compiled your target with `-g` (or `-gline-tables-only` with clang), you can use the binutils `addr2line` utility to query any given offset to see what source line it maps to, and that's exactly what this plugin automates.  If you're not sure if a target has the required information, you can check with a command like `readelf --debug-dump=decodedline a.out`.
+For #2, the binutils `addr2line` utility can query any given offset to see what source line it maps to, which is what this plugin automates.  If you're not sure if a target has the required information, you can check with a command like `readelf --debug-dump=decodedline a.out`, which will show file and line information corresponding to offsets if the debug data is present.
+
+The final requirement is exact same files that were used to build the binary, because naturally if the lines change, the line number information will be inconsistent.
+
+IMPORTANT: any changes to source files will cause inconsistency between what is shown in the source view and the disassembly, as the line information compiled into the binary reflects the exact source lines at compile-time.
 
 ### Usage
 
@@ -36,7 +40,6 @@ Translation paths are a simple string substitution over the path, and you can se
 
 The plugin will search through all substitution paths looking for paths to files on the local machine going from longest to shortest "original path".  If you want to remove a subsitution path, fill in the original path and leave the substitution path blank, then press the `Do Path Substitution` button. The plugin will put warnings in the log if the substitution paths don't seem to be working, but it only looks to see if files exist at a given path, it doesn't do any checking to make sure the contents are correct.
 
-IMPORTANT: Any changes to source files will result in innaccuracy of the source view, as the line information compiled into the binary reflects the exact source lines at compile-time.
 
 ## Installation Instructions
 
@@ -47,10 +50,13 @@ Install the binutils package via `apt install binutils` or the equivalent with y
 After that, just copy this folder into your plugins directory 
 ([instructions](https://docs.binary.ninja/guide/plugins/index.html#using-plugins)).
 
-Only tested on Linux, probably also works on Mac.
+### Mac OS X
+
+Install the plugin as normal.
+
+Install binutils either by compiling from [source](https://www.gnu.org/software/binutils/) or doing `brew install binutils`, and then copy `addr2line` into your path. Keep in mind the sourcery pane will only work for binaries that your version of `addr2line` supports (Mach-O should be included in the homebrew build, but you can check with `addr2line --help`).
 
 ## Minimum Version
 
-This plugin uses `binaryninjaui` so it will probably only work on newer versions, tested on stable 1.1.1689.
-
+Tested on stable 1.1.1689.  This plugin uses `binaryninjaui` so it will probably only work on newer versions.
 
