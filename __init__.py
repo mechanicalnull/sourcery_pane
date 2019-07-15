@@ -28,8 +28,8 @@ def addr2line(executable, offset):
         source_line = output_lines[2].strip()  # e.g. "/home/wintermute/targets/libpng-1.6.36/pngtrans.c:861"
     except Exception as e:
         log_warn("[!] Exception encountered in addr2line: %s" % str(e))
-        log_warn("    stdout: %s" % out)
-        log_warn("    stderr: %s" % err)
+        log_info("    stdout: %s" % out)
+        log_info("    stderr: %s" % err)
         return "ERROR: %s" % str(e)
     if source_line.startswith("??") or source_line.endswith("?"):
         return "?"
@@ -145,6 +145,7 @@ class SourceryPane(QWidget, DockContextHandler):
             if candidate_path in path:
                 substitute_pattern = self.path_substitutions[candidate_path]
                 substitute_path = path.replace(candidate_path, substitute_pattern)
+                substitute_path = os.path.expanduser(substitute_path)
                 candidate_matches.append(substitute_path)
                 if os.path.exists(substitute_path):
                     return substitute_path
@@ -152,12 +153,12 @@ class SourceryPane(QWidget, DockContextHandler):
         if path not in self.failed_substitutions:
             if len(self.path_substitutions) > 0:
                 log_warn("Failed to find substitution for %s" % path)
-                path_substitutions = ''
+                log_info("Current substitution paths:")
                 for orig_path, sub_path in self.path_substitutions.items():
-                    path_substitutions += "\n  %s => %s" % (orig_path, sub_path)
-                log_warn("Current substitution paths: %s" % path_substitutions)
-                failed_candidates = "\n".join(candidate_matches)
-                log_warn("Matching patterns' failed substitute paths: %s" % failed_candidates)
+                    log_info("  %s => %s" % (orig_path, sub_path))
+                log_info("Matching patterns' failed substitute paths:")
+                for candidate in candidate_matches:
+                    log_info("  %s" % candidate)
             self.failed_substitutions.append(path)
         return ""
 
